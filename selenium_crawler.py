@@ -144,7 +144,7 @@ def get_total_info(browser, choice):
         action.click(button)
         action.perform()
         time.sleep(1)
-        print('Get ' + str(len(info_list) + " " + choice + " info."))
+        print('Get ' + str(len(info_list)) + " " + choice + " info.")
         return info_list
 
 
@@ -211,20 +211,19 @@ if __name__ == "__main__":
     # 爬关注数据
     print('爬关注数据:')
     follow_list = get_total_info(browser, choice='follow')
-    delete_duplication(follow_list)
     organize_data(follow_list)
+    delete_duplication(follow_list)
+    write_result("ccnu_following.json", follow_list)
 
     # 爬粉丝数据
     print('爬粉丝数据:')
     fans_list = get_total_info(browser, choice='fans')
-    delete_duplication(fans_list)
     organize_data(fans_list)
-
+    delete_duplication(fans_list)
+    write_result("ccnu_fans.json", fans_list)
     browser.close()
 
     # 将数据写入文件中
-    write_result("ccnu_following.json", follow_list)
-    write_result("ccnu_fans.json", fans_list)
 
 # windows = browser.window_handles
 # browser.switch_to.window(windows[-1])
