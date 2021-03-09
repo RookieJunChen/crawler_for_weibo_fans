@@ -5,7 +5,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
-from processdata import get_constellation, get_age, get_address, organize_data
+from processdata import get_constellation, get_age, get_address, organize_data, delete_duplication
 import json
 import re
 
@@ -28,7 +28,7 @@ def write_result(file, data):
     print("成功保存数据")
 
 
-# 获取粉丝信息
+# 获取某个微博用户的信息
 def get_fan_info(browser, fan):
     info = {}
     browser.execute_script("arguments[0].click();", fan)
@@ -45,10 +45,6 @@ def get_fan_info(browser, fan):
         name = browser.find_element_by_xpath("//span[@class='txt-shadow']")
         info['昵称'] = name.text
 
-        # 收集简介
-        ins = browser.find_element_by_xpath("//p[@class='mod-fil-desc m-text-cut']")
-        info['简介'] = ins.text
-
         # 通过图标判断性别
         sex = browser.find_element_by_xpath("//span[@class='mod-fil-n']//i")
         if sex is None:
@@ -58,6 +54,12 @@ def get_fan_info(browser, fan):
                 info['性别'] = '男'
             else:
                 info['性别'] = '女'
+
+        # 收集简介
+        ins = browser.find_element_by_xpath("//p[@class='mod-fil-desc m-text-cut']")
+        info['简介'] = ins.text
+        if '微博认证' in ins.text:
+            raise Exception
 
         # 收集其余信息
         keys = browser.find_elements_by_xpath("//div[@class='box-left']")
@@ -95,6 +97,7 @@ def get_fan_info(browser, fan):
         return info
 
 
+# 进入关注/粉丝的列表并爬取信息
 def get_total_info(browser, choice):
     choice_num = 0
     if choice == 'fans':
@@ -135,14 +138,14 @@ def get_total_info(browser, choice):
 
 if __name__ == "__main__":
     # 创建Chrome的无头浏览器
-    # opt = webdriver.ChromeOptions()
-    # opt.set_headless()
-    # browser = webdriver.Chrome(options=opt)
+    opt = webdriver.ChromeOptions()
+    opt.set_headless()
+    browser = webdriver.Chrome(options=opt)
 
     name = "华中师范大学"
     cookies = readcookies()
     # 通过cookies来自动登录微博
-    browser = webdriver.Chrome()
+    # browser = webdriver.Chrome()
     browser.get("https://s.weibo.com/")
     for cookie in cookies:
         browser.add_cookie(cookie_dict=cookie)
@@ -161,7 +164,7 @@ if __name__ == "__main__":
     # 点击搜索键
     button = browser.find_element_by_xpath("//div[@class='search']//button")
     browser.execute_script("arguments[0].click();", button)
-    time.sleep(10)
+    time.sleep(5)
 
     # 选择第一个，点进去
     links = browser.find_elements_by_xpath("//div[@class='info']//a[@class='name']")
@@ -193,18 +196,20 @@ if __name__ == "__main__":
     # 爬关注数据
     print('爬关注数据:')
     follow_list = get_total_info(browser, choice='follow')
+    delete_duplication(follow_list)
     organize_data(follow_list)
 
     # 爬粉丝数据
     print('爬粉丝数据:')
     fans_list = get_total_info(browser, choice='fans')
+    delete_duplication(fans_list)
     organize_data(fans_list)
 
     browser.close()
 
     # 将数据写入文件中
-    write_result("following.json", follow_list)
-    write_result("fans.json", fans_list)
+    write_result("ccnu_following.json", follow_list)
+    write_result("ccnu_fans.json", fans_list)
 
 # windows = browser.window_handles
 # browser.switch_to.window(windows[-1])

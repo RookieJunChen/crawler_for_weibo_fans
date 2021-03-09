@@ -2,6 +2,7 @@ import re
 import json
 
 
+# 整理数据
 def organize_data(input_dataset):
     keyset = {'昵称'}
     sorted_dataset = []
@@ -19,6 +20,17 @@ def organize_data(input_dataset):
                 data[key] = '未知'
         sorted_dataset.append(data)
     return sorted_dataset
+
+
+# 数据去重
+def delete_duplication(input_dataset):
+    name_set = {'烂柯人201506'}
+    for data in input_dataset:
+        if data['昵称'] in name_set:
+            input_dataset.remove(data)
+        else:
+            name_set.add(data['昵称'])
+    return input_dataset
 
 
 # 通过正则表达式提取出地域
@@ -63,3 +75,11 @@ if __name__ == "__main__":
     organize_data(data)
     for d in data:
         print(d)
+
+    data.append(data[2])
+    print(len(data))
+
+    delete_duplication(data)
+    for d in data:
+        print(d)
+    print(len(data))
