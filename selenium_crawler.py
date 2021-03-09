@@ -104,47 +104,62 @@ def get_total_info(browser, choice):
         choice_num = 1
     else:
         choice_num = 0
+    try:
+        # 点击进入粉丝/关注界面
+        texts = browser.find_elements_by_xpath("//div[@class='m-box-center-a']//i")
+        print(texts[choice_num].text)
+        browser.execute_script("arguments[0].click();", texts[choice_num])
+        time.sleep(5)
 
-    # 点击进入粉丝/关注界面
-    texts = browser.find_elements_by_xpath("//div[@class='m-box-center-a']//i")
-    print(texts[choice_num].text)
-    browser.execute_script("arguments[0].click();", texts[choice_num])
-    time.sleep(5)
+        # 向下拖动滚轮
+        for i in range(150):
+            js = "document.documentElement.scrollTop=100000000"
+            browser.execute_script(js)
+            time.sleep(0.5)
 
-    # 向下拖动滚轮
-    for i in range(150):
-        js = "document.documentElement.scrollTop=100000000"
-        browser.execute_script(js)
-        time.sleep(0.5)
-
-    # 爬取粉丝数据
-    fans = browser.find_elements_by_xpath("//div[@class='m-box-col m-box-dir m-box-center']")
-    length = len(fans)
-    info_list = []
-    for i in range(length):
+        # 爬取粉丝数据
         fans = browser.find_elements_by_xpath("//div[@class='m-box-col m-box-dir m-box-center']")
-        info_list.append(get_fan_info(browser, fans[i]))
-        print(str(i + 1) + "/" + str(length))
+        length = len(fans)
+        info_list = []
+        for i in range(length):
+            fans = browser.find_elements_by_xpath("//div[@class='m-box-col m-box-dir m-box-center']")
+            info_list.append(get_fan_info(browser, fans[i]))
+            print(str(i + 1) + "/" + str(length))
 
-    # 按返回键
-    button = browser.find_element_by_xpath("//div[@class='nav-left']//i")
-    action = ActionChains(browser)
-    action.move_by_offset(2, 2)
-    action.click(button)
-    action.perform()
-    time.sleep(1)
-    return info_list
+        # 按返回键
+        button = browser.find_element_by_xpath("//div[@class='nav-left']//i")
+        action = ActionChains(browser)
+        action.move_by_offset(2, 2)
+        action.click(button)
+        action.perform()
+        time.sleep(1)
+        print('Get ' + str(len(info_list) + " " + choice + " info."))
+        return info_list
+
+    except BaseException:
+        # 按返回键
+        button = browser.find_element_by_xpath("//div[@class='nav-left']//i")
+        action = ActionChains(browser)
+        action.move_by_offset(2, 2)
+        action.click(button)
+        action.perform()
+        time.sleep(1)
+        print('Get ' + str(len(info_list) + " " + choice + " info."))
+        return info_list
 
 
 if __name__ == "__main__":
+
+    name = "华中师范大学"
+
+    # 通过cookies来自动登录微博
+    cookies = readcookies()
+
     # 创建Chrome的无头浏览器
     opt = webdriver.ChromeOptions()
     opt.set_headless()
     browser = webdriver.Chrome(options=opt)
-
-    name = "华中师范大学"
-    cookies = readcookies()
-    # 通过cookies来自动登录微博
+    # 创建可见的Chrome浏览器
     # browser = webdriver.Chrome()
     browser.get("https://s.weibo.com/")
     for cookie in cookies:
