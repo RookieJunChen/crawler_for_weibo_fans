@@ -28,6 +28,73 @@ def write_result(file, data):
     print("成功保存数据")
 
 
+# 获取浏览器
+def get_browser(choice):
+    # 创建可见的Chrome浏览器
+    if choice == "head":
+        browser = webdriver.Chrome()
+    else:  # 创建Chrome的无头浏览器
+        opt = webdriver.ChromeOptions()
+        opt.set_headless()
+        browser = webdriver.Chrome(options=opt)
+    return browser
+
+
+# 通过cookies来自动登录微博
+def auto_login(browser):
+    browser.get("https://s.weibo.com/")
+    cookies = readcookies()
+    for cookie in cookies:
+        browser.add_cookie(cookie_dict=cookie)
+    browser.get("https://s.weibo.com/")
+    browser.implicitly_wait(10)
+
+
+# 搜索用户并进入相关网页
+def search_for_user(name, browser):
+    # 切换到找人页面
+    button = browser.find_element_by_xpath("//div[@class='nav']//a[@title='找人']")
+    browser.execute_script("arguments[0].click();", button)
+    browser.implicitly_wait(10)
+
+    # 输入要搜索的人名
+    browser.find_element_by_xpath("//div[@class='search-input']//input[@type='text']").send_keys(name)
+    browser.implicitly_wait(10)
+
+    # 点击搜索键
+    button = browser.find_element_by_xpath("//div[@class='search']//button")
+    browser.execute_script("arguments[0].click();", button)
+    time.sleep(5)
+
+    # 选择第一个，点进去
+    links = browser.find_elements_by_xpath("//div[@class='info']//a[@class='name']")
+    print(links[0].text)
+    browser.execute_script("arguments[0].click();", links[0])
+    browser.close()
+
+    windows = browser.window_handles
+    browser.switch_to.window(windows[-1])
+
+    # 找到用户的oid
+    oidstr = None
+    while oidstr is None:
+        pattern = re.compile("\$CONFIG\['oid'\]='(\d)*';")
+        oidstr = re.search(pattern, browser.page_source)
+        time.sleep(1)
+    pattern2 = re.compile("(\d)+")
+    oid = re.search(pattern2, oidstr.group(0))
+    print(oid.group(0))
+
+    # 根据用户oid进入相关网页
+    cookies = readcookies()
+    url = "https://m.weibo.cn/profile/" + oid.group(0)
+    browser.get(url)
+    for cookie in cookies:
+        browser.add_cookie(cookie_dict=cookie)
+    browser.get(url)
+    browser.implicitly_wait(10)
+
+
 # 获取某个微博用户的信息
 def get_fan_info(browser, fan):
     info = {}
@@ -149,70 +216,23 @@ def get_total_info(browser, choice):
 
 
 if __name__ == "__main__":
-
     name = "华中师范大学"
 
-    # 创建Chrome的无头浏览器
-    opt = webdriver.ChromeOptions()
-    opt.set_headless()
-    browser = webdriver.Chrome(options=opt)
-    # 创建可见的Chrome浏览器
-    # browser = webdriver.Chrome()
+    # 获取浏览器
+    browser = get_browser('head')
 
     # 通过cookies来自动登录微博
-    browser.get("https://s.weibo.com/")
-    cookies = readcookies()
-    for cookie in cookies:
-        browser.add_cookie(cookie_dict=cookie)
-    browser.get("https://s.weibo.com/")
-    browser.implicitly_wait(10)
+    auto_login(browser)
 
-    # 切换到找人页面
-    button = browser.find_element_by_xpath("//div[@class='nav']//a[@title='找人']")
-    browser.execute_script("arguments[0].click();", button)
-    browser.implicitly_wait(10)
-
-    # 输入要搜索的人名
-    browser.find_element_by_xpath("//div[@class='search-input']//input[@type='text']").send_keys(name)
-    browser.implicitly_wait(10)
-
-    # 点击搜索键
-    button = browser.find_element_by_xpath("//div[@class='search']//button")
-    browser.execute_script("arguments[0].click();", button)
-    time.sleep(5)
-
-    # 选择第一个，点进去
-    links = browser.find_elements_by_xpath("//div[@class='info']//a[@class='name']")
-    print(links[0].text)
-    browser.execute_script("arguments[0].click();", links[0])
-    browser.close()
-
-    windows = browser.window_handles
-    browser.switch_to.window(windows[-1])
-
-    # 找到用户的oid
-    oidstr = None
-    while oidstr is None:
-        pattern = re.compile("\$CONFIG\['oid'\]='(\d)*';")
-        oidstr = re.search(pattern, browser.page_source)
-        time.sleep(1)
-    pattern2 = re.compile("(\d)+")
-    oid = re.search(pattern2, oidstr.group(0))
-    print(oid.group(0))
-
-    # 根据用户oid进入相关网页
-    url = "https://m.weibo.cn/profile/" + oid.group(0)
-    browser.get(url)
-    for cookie in cookies:
-        browser.add_cookie(cookie_dict=cookie)
-    browser.get(url)
-    browser.implicitly_wait(10)
+    # 搜索用户并进入相关网页
+    search_for_user(name, browser)
 
     # 爬关注数据
     print('爬关注数据:')
     follow_list = get_total_info(browser, choice='follow')
     organize_data(follow_list)
     delete_duplication(follow_list)
+    # 将数据写入文件中
     write_result("ccnu_following.json", follow_list)
 
     # 爬粉丝数据
@@ -220,10 +240,10 @@ if __name__ == "__main__":
     fans_list = get_total_info(browser, choice='fans')
     organize_data(fans_list)
     delete_duplication(fans_list)
-    write_result("ccnu_fans.json", fans_list)
-    browser.close()
-
     # 将数据写入文件中
+    write_result("ccnu_fans.json", fans_list)
+
+    browser.close()
 
 # windows = browser.window_handles
 # browser.switch_to.window(windows[-1])
