@@ -22,8 +22,8 @@ def readcookies():
 
 # 将数据写入.json文件中
 def write_result(file, data):
-    fp = open(file, 'w')
-    json.dump(data, fp)
+    fp = open(file, 'w', encoding='utf=8')
+    json.dump(data, fp, ensure_ascii=False)
     fp.close()
     print("成功保存数据")
 
@@ -112,7 +112,7 @@ def get_total_info(browser, choice):
         time.sleep(5)
 
         # 向下拖动滚轮
-        for i in range(150):
+        for i in range(200):
             js = "document.documentElement.scrollTop=100000000"
             browser.execute_script(js)
             time.sleep(0.5)
