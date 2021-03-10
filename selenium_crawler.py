@@ -152,16 +152,16 @@ if __name__ == "__main__":
 
     name = "华中师范大学"
 
-    # 通过cookies来自动登录微博
-    cookies = readcookies()
-
     # 创建Chrome的无头浏览器
     opt = webdriver.ChromeOptions()
     opt.set_headless()
     browser = webdriver.Chrome(options=opt)
     # 创建可见的Chrome浏览器
     # browser = webdriver.Chrome()
+
+    # 通过cookies来自动登录微博
     browser.get("https://s.weibo.com/")
+    cookies = readcookies()
     for cookie in cookies:
         browser.add_cookie(cookie_dict=cookie)
     browser.get("https://s.weibo.com/")
